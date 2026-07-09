@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rafael Antonio Web — Consultoria Digital + Web Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#030303;
+    --surface:#030303;
+    --ink-900:#030303;
+    --ink-700:#030303;
+    --blue-600:#1D4E96;
+    --blue-400:#2E7BE0;
+    --blue-200:#9EC6FF;
+    --blue-deep:var(--blue-600);
+    --blue-mid:var(--blue-600);
+    --blue-accent:var(--blue-400);
+    --blue-glow:var(--blue-600);
+    --text-primary:#F2F4F7;
+    --text-secondary:#7C8798;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-voice:'Fraunces', serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--text-primary);
+    font-family:var(--font-display); overflow-x:hidden; cursor:none;
+  }
+  canvas#scene{ position:fixed; inset:0; z-index:1; }
+
+  .aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; }
+  .aurora span{
+    position:absolute; border-radius:50%; filter:blur(90px); mix-blend-mode:screen;
+    opacity:0.55; will-change:transform;
+  }
+  .aurora span:nth-child(1){
+    width:52vw; height:52vw; left:-10vw; top:-14vw;
+    background:radial-gradient(circle, #13294B, transparent 70%);
+    animation: drift1 22s ease-in-out infinite;
+  }
+  .aurora span:nth-child(2){
+    width:44vw; height:44vw; right:-8vw; top:6vw;
+    background:radial-gradient(circle, #1D4E96, transparent 70%);
+    animation: drift2 26s ease-in-out infinite;
+  }
+  .aurora span:nth-child(3){
+    width:38vw; height:38vw; left:22vw; bottom:-16vw;
+    background:radial-gradient(circle, #050B14, transparent 70%);
+    animation: drift3 30s ease-in-out infinite;
+  }
+  @keyframes drift1{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(6vw,8vw) scale(1.15); }
+  }
+  @keyframes drift2{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(-7vw,5vw) scale(0.9); }
+  }
+  @keyframes drift3{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(4vw,-6vw) scale(1.2); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .aurora span{ animation:none; }
+  }
+
+  .glow{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background: radial-gradient(ellipse 60% 50% at 68% 45%, rgba(29,78,150,0.4), transparent 65%);
+  }
+  .noise{
+    position:fixed; inset:0; pointer-events:none; z-index:3; opacity:0.045; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:2; pointer-events:none;
+    box-shadow: inset 0 0 220px 40px rgba(0,0,0,0.75);
+  }
+
+  .cursor{
+    position:fixed; top:0; left:0; width:8px; height:8px; border-radius:50%;
+    background:var(--blue-accent); pointer-events:none; z-index:9999;
+    transform:translate(-50%,-50%);
+  }
+  .cursor-ring{
+    position:fixed; top:0; left:0; width:34px; height:34px; border-radius:50%;
+    border:1px solid rgba(46,123,224,0.65); pointer-events:none; z-index:9998;
+    transform:translate(-50%,-50%); transition:transform .12s ease-out;
+  }
+
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:2rem clamp(1.5rem,5vw,4rem);
+  }
+  .logo{font-weight:600; font-size:1rem; letter-spacing:0.02em;}
+  .logo-web{
+    font-weight:400; color:var(--text-secondary); font-size:0.82em;
+    margin-left:0.3em; letter-spacing:0.02em;
+  }
+  .nav-right{ display:flex; gap:2.2rem; align-items:center; font-size:0.82rem; color:var(--text-secondary); }
+  .lang-toggle{
+    border:1px solid rgba(255,255,255,0.14); border-radius:20px; padding:0.3rem 0.9rem;
+    font-size:0.72rem; letter-spacing:0.05em; color:var(--text-secondary);
+  }
+
+  .hero{
+    position:relative; z-index:10; min-height:100vh;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:0 clamp(1.5rem,5vw,4rem); max-width:1500px;
+  }
+
+  .tag-row{
+    display:flex; align-items:center; gap:0.9rem; margin-bottom:2rem; opacity:0;
+  }
+  .tag{
+    font-size:0.78rem; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--text-primary); border:1px solid rgba(255,255,255,0.18);
+    border-radius:20px; padding:0.45rem 1.1rem; font-weight:500;
+  }
+  .tag:first-child{ border-color:var(--blue-400); color:var(--blue-200); }
+  .tag-sep{ color:var(--text-secondary); font-size:0.85rem; }
+
+  .pillars{
+    margin-top:1.6rem; max-width:42ch; font-size:1rem; line-height:1.6;
+    color:var(--text-secondary); opacity:0; transform:translateY(12px);
+  }
+
+  .headline{
+    font-weight:700; letter-spacing:-0.02em; line-height:0.98;
+    font-size:clamp(2.6rem, 7.5vw, 6.4rem);
+    max-width:20ch;
+  }
+  .headline .row{ overflow:hidden; }
+  .headline .row span{ display:block; transform:translateY(110%); }
+  .headline em{
+    font-family:var(--font-voice); font-style:italic; font-weight:500; color:var(--blue-accent);
+  }
+
+  .sub{
+    margin-top:2rem; max-width:38ch; font-size:1.05rem; line-height:1.7;
+    color:var(--text-secondary); opacity:0; transform:translateY(14px);
+  }
+  .age-line{
+    margin-top:1.3rem; font-size:0.85rem; color:var(--text-secondary);
+    border-left:2px solid var(--blue-mid); padding-left:0.9rem; opacity:0; transform:translateY(14px);
+    max-width:38ch;
+  }
+  .age-line strong{ color:var(--text-primary); font-weight:600; }
+
+  .cta-row{ margin-top:2.6rem; display:flex; gap:1.2rem; align-items:center; flex-wrap:wrap; opacity:0; transform:translateY(14px); }
+  .btn-primary{
+    background:var(--blue-accent); color:#04121C; font-weight:600; font-size:0.95rem;
+    padding:0.95rem 1.9rem; border-radius:3px; text-decoration:none;
+    display:inline-flex; align-items:center; gap:0.6rem; transition:transform .3s ease, box-shadow .3s ease;
+  }
+  .btn-primary:hover{ transform:translateX(3px); box-shadow:0 0 24px rgba(46,123,224,0.5); }
+  .btn-ghost{
+    color:var(--text-primary); font-size:0.95rem; text-decoration:none;
+    border-bottom:1px solid rgba(255,255,255,0.25); padding-bottom:2px;
+  }
+
+  .scroll-cue{
+    position:fixed; bottom:2.4rem; left:clamp(1.5rem,5vw,4rem); z-index:20;
+    display:flex; align-items:center; gap:0.7rem; color:var(--text-secondary);
+    font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase;
+  }
+  .scroll-line{ width:1px; height:30px; background:rgba(255,255,255,0.15); position:relative; overflow:hidden; }
+  .scroll-line::after{
+    content:''; position:absolute; top:-100%; left:0; width:100%; height:100%;
+    background:var(--blue-accent); animation:scrollmove 2.4s ease-in-out infinite;
+  }
+  @keyframes scrollmove{ 50%{top:0%;} 100%{top:100%;} }
+
+  @media (max-width:720px){
+    .cursor,.cursor-ring{ display:none; } body{ cursor:auto; }
+    canvas#scene{ opacity:0.7; }
+    .step-ghost{ display:none; }
+    .steps{ padding-left:1.6rem; }
+    .step-node{ left:-1.6rem; }
+  }
+
+  /* ---------- Processo ---------- */
+  .processo{
+    position:relative; overflow:hidden; z-index:10; background:var(--bg);
+    padding:8rem clamp(1.5rem,5vw,4rem) 9rem;
+  }
+  .processo-inner{ position:relative; z-index:1; max-width:1200px; margin:0 auto; }
+  .eyebrow-sm{
+    font-size:0.78rem; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--blue-200); margin-bottom:1.2rem; display:flex; align-items:center; gap:0.7rem;
+  }
+  .eyebrow-sm::before{ content:''; width:26px; height:1px; background:var(--blue-400); }
+  .processo-title{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-0.01em;
+    font-size:clamp(2rem, 4.5vw, 3.4rem); line-height:1.12; max-width:14ch;
+  }
+  .processo-title em{ font-family:var(--font-voice); font-style:italic; font-weight:500; color:var(--blue-400); }
+  .processo-sub{
+    margin-top:1.4rem; max-width:44ch; color:var(--text-secondary); font-size:1.02rem; line-height:1.7;
+  }
+
+  .steps{ position:relative; margin-top:5rem; padding-left:2.4rem; }
+  .steps-track{
+    position:absolute; left:0; top:0.4rem; bottom:0.4rem; width:2px; background:rgba(255,255,255,0.1);
+  }
+  .steps-fill{
+    position:absolute; left:0; top:0; width:100%; height:0%;
+    background:linear-gradient(180deg, var(--blue-400), var(--blue-600));
+  }
+  .step{
+    position:relative; display:flex; gap:1.8rem; padding:2.6rem 0;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    opacity:0.25; transform:translateX(-8px);
+    overflow:hidden;
+  }
+  .step:last-child{ border-bottom:none; }
+  .step-node{
+    position:absolute; left:-2.4rem; top:2.9rem; width:11px; height:11px;
+    border-radius:50%; background:var(--ink-700); border:2px solid rgba(255,255,255,0.15);
+    transform:translateX(-50%); transition: background .4s ease, border-color .4s ease, box-shadow .4s ease;
+  }
+  .step-node.lit{
+    background:var(--blue-400); border-color:var(--blue-200);
+    box-shadow:0 0 14px 3px rgba(46,123,224,0.7);
+  }
+  .step-ghost{
+    position:absolute; right:-0.5rem; top:50%; transform:translateY(-50%);
+    font-family:var(--font-voice); font-weight:600; font-style:italic;
+    font-size:clamp(4.5rem, 9vw, 8rem); color:rgba(255,255,255,0.035);
+    pointer-events:none; line-height:1; z-index:0; user-select:none;
+  }
+  .step-num{
+    position:relative; z-index:1;
+    font-family:var(--font-voice); font-style:italic; font-weight:500;
+    font-size:1.4rem; color:var(--blue-400); min-width:3ch; flex-shrink:0;
+  }
+  .step-body{ position:relative; z-index:1; }
+  .step-body h3{ font-size:1.35rem; font-weight:600; margin-bottom:0.6rem; }
+  .step-body p{ color:var(--text-secondary); font-size:0.98rem; line-height:1.65; max-width:52ch; }
+
+  /* ---------- Problema & Solução ---------- */
+  .problema{
+    position:relative; overflow:hidden; z-index:10; background:var(--bg);
+    padding:8rem clamp(1.5rem,5vw,4rem) 9rem;
+  }
+  .problema-inner{ position:relative; z-index:1; max-width:1200px; margin:0 auto; }
+  .problema-head{ max-width:52ch; }
+  .problema-title{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-0.01em;
+    font-size:clamp(2rem, 4.5vw, 3rem); line-height:1.18;
+  }
+  .problema-title em{ font-family:var(--font-voice); font-style:italic; font-weight:500; color:var(--blue-400); }
+
+  .orbit-wrap{
+    position:relative; width:min(420px, 90vw); height:min(420px, 90vw);
+    margin:5.5rem auto 2rem;
+  }
+  .orbit-glow{
+    position:absolute; inset:10%; border-radius:50%;
+    background:radial-gradient(circle, rgba(46,123,224,0.22), transparent 70%);
+    filter:blur(20px);
+  }
+  .orbit-center{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:150px; height:150px; border-radius:50%;
+    background:var(--ink-900); border:1px solid rgba(255,255,255,0.12);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:0.82rem; color:var(--text-secondary); line-height:1.4; z-index:3;
+    box-shadow: inset 0 0 30px rgba(46,123,224,0.15);
+  }
+  .orbit-lines{
+    position:absolute; inset:0; width:100%; height:100%; z-index:1;
+  }
+  .orbit-lines line{ stroke:rgba(46,123,224,0.25); stroke-width:1; }
+
+  .orbit-ring{
+    position:absolute; inset:0; z-index:2;
+    animation: spin 50s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .orbit-node{
+    position:absolute; width:14px; height:14px; border-radius:50%;
+    background:var(--blue-400); box-shadow:0 0 12px 2px rgba(46,123,224,0.6);
+    top:50%; left:50%;
+  }
+  .n1{ transform: rotate(-45deg) translate(0, -170px); }
+  .n2{ transform: rotate(45deg) translate(0, -170px); }
+  .n3{ transform: rotate(135deg) translate(0, -170px); }
+  .n4{ transform: rotate(225deg) translate(0, -170px); }
+
+  .node-label{
+    position:absolute; top:50%; left:50%;
+    width:120px; font-size:0.78rem; line-height:1.4; color:var(--text-secondary);
+    text-align:center; animation: spin-reverse 50s linear infinite;
+    transform-origin:center;
+  }
+  .n1 .node-label{ transform:translate(-50%, -270px) rotate(45deg); }
+  .n2 .node-label{ transform:translate(-50%, -270px) rotate(-45deg); }
+  .n3 .node-label{ transform:translate(-50%, 150px) rotate(-135deg); }
+  .n4 .node-label{ transform:translate(-50%, 150px) rotate(-225deg); }
+  @keyframes spin-reverse{ from{ transform:rotate(0deg);} to{ transform:rotate(-360deg);} }
+
+  @media (prefers-reduced-motion: reduce){
+    .orbit-ring, .node-label{ animation:none; }
+  }
+  @media (max-width:640px){
+    .orbit-wrap{ transform:scale(0.82); margin:4rem auto 0; }
+  }
+
+  .solucao{ margin-top:3rem; }
+  .solucao-lead{
+    text-align:center; font-size:1.05rem; color:var(--text-primary); font-weight:500; margin-bottom:2.5rem;
+  }
+  .solucao-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:1.5rem;
+  }
+  .solucao-card{
+    background:var(--ink-900); border:1px solid rgba(255,255,255,0.08); border-radius:8px;
+    padding:2rem 1.6rem; transition: border-color .3s ease, transform .3s ease;
+  }
+  .solucao-card:hover{ border-color:var(--blue-400); transform:translateY(-4px); }
+  .solucao-num{ font-family:var(--font-voice); font-style:italic; color:var(--blue-400); font-size:1.2rem; }
+  .solucao-card h3{ font-size:1.1rem; font-weight:600; margin:0.8rem 0 0.6rem; }
+  .solucao-card p{ font-size:0.92rem; color:var(--text-secondary); line-height:1.6; }
+
+  @media (max-width:820px){
+    .solucao-grid{ grid-template-columns:1fr; }
+  }
+
+  /* ---------- Serviços ---------- */
+  .servicos{
+    position:relative; overflow:hidden; z-index:10; background:var(--bg);
+    padding:8rem clamp(1.5rem,5vw,4rem) 9rem;
+  }
+  .servicos-inner{ position:relative; z-index:1; max-width:1200px; margin:0 auto; }
+  .tiers{
+    margin-top:4rem; display:grid; grid-template-columns:repeat(3, 1fr); gap:1.5rem;
+    align-items:stretch;
+  }
+  .tier-card{
+    position:relative; background:var(--surface); border:1px solid rgba(255,255,255,0.09);
+    border-radius:10px; padding:2.4rem 1.9rem; display:flex; flex-direction:column;
+    transition: border-color .3s ease, transform .3s ease;
+  }
+  .tier-card:hover{ border-color:rgba(46,123,224,0.5); transform:translateY(-4px); }
+  .tier-card.featured{
+    background:var(--ink-900); border-color:var(--blue-400);
+    box-shadow:0 0 40px rgba(46,123,224,0.18);
+  }
+  .tier-badge{
+    position:absolute; top:-13px; left:1.9rem; background:var(--blue-400); color:#04111F;
+    font-size:0.7rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
+    padding:0.35rem 0.9rem; border-radius:20px;
+  }
+  .tier-eyebrow{
+    font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--blue-200);
+    margin-bottom:0.8rem;
+  }
+  .tier-name{
+    font-family:var(--font-voice); font-style:italic; font-weight:500;
+    font-size:1.9rem; margin-bottom:0.9rem;
+  }
+  .tier-desc{ color:var(--text-secondary); font-size:0.92rem; line-height:1.6; margin-bottom:1.6rem; }
+  .tier-list{ list-style:none; margin-bottom:2rem; flex-grow:1; }
+  .tier-list li{
+    font-size:0.88rem; color:var(--text-primary); padding:0.55rem 0; padding-left:1.3rem;
+    position:relative; border-top:1px solid rgba(255,255,255,0.07);
+  }
+  .tier-list li:first-child{ border-top:none; }
+  .tier-list li::before{
+    content:'—'; position:absolute; left:0; color:var(--blue-400);
+  }
+  .tier-cta{
+    text-align:center; padding:0.85rem 1rem; border-radius:5px; font-size:0.9rem;
+    font-weight:500; text-decoration:none; transition: opacity .3s ease;
+  }
+  .tier-cta.ghost{ border:1px solid rgba(255,255,255,0.18); color:var(--text-primary); }
+  .tier-cta.ghost:hover{ border-color:var(--blue-400); }
+  .tier-cta.solid{ background:var(--blue-400); color:#04111F; font-weight:600; }
+  .tier-cta.solid:hover{ opacity:0.88; }
+
+  @media (max-width:900px){
+    .tiers{ grid-template-columns:1fr; }
+    .tier-card.featured{ order:-1; }
+  }
+
+  /* ---------- Autoridade ---------- */
+  .autoridade{
+    position:relative; overflow:hidden; z-index:10; background:var(--bg);
+    padding:8rem clamp(1.5rem,5vw,4rem);
+  }
+  .autoridade-inner{
+    position:relative; z-index:1;
+    max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1.1fr 0.9fr; gap:4rem;
+  }
+  .autoridade-p{ color:var(--text-secondary); font-size:1rem; line-height:1.75; margin-top:1.4rem; max-width:52ch; }
+  .autoridade-badges{ display:flex; flex-direction:column; gap:1.6rem; justify-content:center; }
+  .badge-item{
+    display:flex; gap:1.1rem; align-items:flex-start; border-left:2px solid var(--blue-600);
+    padding-left:1.2rem;
+  }
+  .badge-num{ font-family:var(--font-voice); font-style:italic; color:var(--blue-400); font-size:1.1rem; }
+  .badge-item p{ color:var(--text-secondary); font-size:0.92rem; line-height:1.55; }
+
+  @media (max-width:900px){
+    .autoridade-inner{ grid-template-columns:1fr; gap:2.5rem; }
+  }
+
+  /* ---------- Contato & Rodapé ---------- */
+  .contato{
+    position:relative; overflow:hidden; z-index:10; background:var(--bg);
+    padding:9rem clamp(1.5rem,5vw,4rem) 0; text-align:center;
+  }
+  .contato-inner{ position:relative; z-index:1; max-width:700px; margin:0 auto; }
+  .contato-title{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-0.01em;
+    font-size:clamp(2.2rem, 5vw, 3.6rem); line-height:1.12;
+  }
+  .contato-sub{ margin-top:1.3rem; color:var(--text-secondary); font-size:1.02rem; }
+  .contato-cta-row{ margin-top:2.4rem; display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; }
+
+  .site-footer{ margin-top:6rem; border-top:1px solid rgba(255,255,255,0.08); padding:2.2rem clamp(1.5rem,5vw,4rem); }
+  .footer-inner{
+    max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:1rem;
+  }
+  .footer-links{ display:flex; gap:1.8rem; align-items:center; font-size:0.82rem; color:var(--text-secondary); }
+  .footer-copy{ font-size:0.78rem; color:var(--text-secondary); }
+  @media (max-width:640px){
+    .footer-inner{ flex-direction:column; text-align:center; }
+  }
+
+  /* ---------- Dark veil (glow estratégico em preto sólido) ---------- */
+  .veil{
+    position:absolute; pointer-events:none; border-radius:50%;
+    filter:blur(100px); opacity:0.28; z-index:0;
+  }
+  .veil-tr{ top:-10%; right:-8%; width:42vw; height:42vw; background:radial-gradient(circle, var(--blue-600), transparent 70%); }
+  .veil-bl{ bottom:-14%; left:-10%; width:46vw; height:46vw; background:radial-gradient(circle, var(--blue-600), transparent 70%); }
+  .veil-tl{ top:-12%; left:-6%; width:38vw; height:38vw; background:radial-gradient(circle, var(--blue-400), transparent 70%); opacity:0.22; }
+  .veil-br{ bottom:-16%; right:-8%; width:40vw; height:40vw; background:radial-gradient(circle, var(--blue-600), transparent 70%); }
+  .veil-top{ top:-20%; left:50%; transform:translateX(-50%); width:50vw; height:30vw; background:radial-gradient(ellipse, var(--blue-600), transparent 70%); opacity:0.22; }
+</style>
+</head>
+<body>
+
+<div class="aurora"><span></span><span></span><span></span></div>
+<canvas id="scene"></canvas>
+<div class="glow"></div>
+<div class="vignette"></div>
+<div class="noise"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav>
+  <div class="logo">Rafael Antonio<span class="logo-web">Web</span></div>
+  <div class="nav-right">
+    <a href="#servicos" style="color:inherit;text-decoration:none;">Serviços</a>
+    <a href="#autoridade" style="color:inherit;text-decoration:none;">Autoridade</a>
+    <a href="#contato" style="color:inherit;text-decoration:none;">Contato</a>
+    <div class="lang-toggle">PT / EN</div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="tag-row" id="eyebrow">
+    <span class="tag">Consultoria Digital</span>
+    <span class="tag-sep">+</span>
+    <span class="tag">Web Design</span>
+  </div>
+  <h1 class="headline">
+    <span class="row"><span>Bonito não vende.</span></span>
+    <span class="row"><span><em>Estratégia</em>, sim.</span></span>
+  </h1>
+  <p class="pillars" id="pillarsText">
+    Pra clínicas, estúdios e escritórios com site feio — ou nenhum site.
+  </p>
+  <div class="cta-row" id="ctaRow">
+    <a href="#" class="btn-primary">Quero vender mais →</a>
+  </div>
+</section>
+
+<div class="scroll-cue"><div class="scroll-line"></div>scroll</div>
+
+<section class="processo" id="processo">
+  <div class="veil veil-tr"></div>
+  <div class="processo-inner">
+    <div class="processo-head">
+      <div class="eyebrow-sm">Método</div>
+      <h2 class="processo-title">Consultoria primeiro.<br><em>Execução</em> depois.</h2>
+      <p class="processo-sub">Todo projeto começa com uma decisão estratégica — o site é a consequência, não o ponto de partida.</p>
+    </div>
+
+    <div class="steps">
+      <div class="steps-track"><div class="steps-fill" id="stepsFill"></div></div>
+      <div class="step">
+        <span class="step-node" data-pct="0"></span>
+        <span class="step-ghost">01</span>
+        <span class="step-num">01</span>
+        <div class="step-body">
+          <h3>Diagnóstico</h3>
+          <p>Entendo o negócio antes de pensar em design — dor, objetivo e cliente ideal, com perguntas que vão direto ao ponto.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-node" data-pct="33"></span>
+        <span class="step-ghost">02</span>
+        <span class="step-num">02</span>
+        <div class="step-body">
+          <h3>Posicionamento</h3>
+          <p>Defino como você quer ser visto: preço, nicho, autoridade e o que te diferencia de quem cobra igual.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-node" data-pct="66"></span>
+        <span class="step-ghost">03</span>
+        <span class="step-num">03</span>
+        <div class="step-body">
+          <h3>Presença digital</h3>
+          <p>Google Business, Instagram e conteúdo alinhados à posição definida — antes de qualquer linha de código.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-node" data-pct="100"></span>
+        <span class="step-ghost">04</span>
+        <span class="step-num">04</span>
+        <div class="step-body">
+          <h3>Execução</h3>
+          <p>Só então construo o site — com SEO técnico e código pensado pro seu caso, não genérico.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="problema" id="problema">
+  <div class="veil veil-bl"></div>
+  <div class="problema-inner">
+    <div class="problema-head">
+      <div class="eyebrow-sm">O problema real</div>
+      <h2 class="problema-title">Quem chega no seu site decide<br>em <em>3 segundos</em> se confia em você.</h2>
+      <p class="processo-sub">Se a primeira impressão não combina com a qualidade do seu trabalho, o cliente desconfia — e vai pro concorrente que parece mais preparado.</p>
+    </div>
+
+    <div class="orbit-wrap">
+      <div class="orbit-glow"></div>
+      <div class="orbit-center">
+        <span>Confusão<br>na presença<br>digital</span>
+      </div>
+      <svg class="orbit-lines" viewBox="0 0 400 400">
+        <line x1="200" y1="200" x2="200" y2="46" />
+        <line x1="200" y1="200" x2="354" y2="200" />
+        <line x1="200" y1="200" x2="200" y2="354" />
+        <line x1="200" y1="200" x2="46" y2="200" />
+      </svg>
+      <div class="orbit-ring">
+        <div class="orbit-node n1"><div class="node-label">Não aparece<br>no Google</div></div>
+        <div class="orbit-node n2"><div class="node-label">Visual não passa<br>confiança</div></div>
+        <div class="orbit-node n3"><div class="node-label">Perde cliente<br>pro concorrente</div></div>
+        <div class="orbit-node n4"><div class="node-label">Instagram e site<br>desconectados</div></div>
+      </div>
+    </div>
+
+    <div class="solucao">
+      <p class="solucao-lead">Eu organizo isso em três decisões claras:</p>
+      <div class="solucao-grid">
+        <div class="solucao-card">
+          <span class="solucao-num">01</span>
+          <h3>Confiança visual</h3>
+          <p>Design que comunica competência no primeiro olhar — antes de qualquer palavra.</p>
+        </div>
+        <div class="solucao-card">
+          <span class="solucao-num">02</span>
+          <h3>Mensagem clara</h3>
+          <p>O visitante entende em segundos o que você faz e por que deveria escolher você.</p>
+        </div>
+        <div class="solucao-card">
+          <span class="solucao-num">03</span>
+          <h3>Presença coerente</h3>
+          <p>Site, Google e Instagram contando a mesma história — sem ruído entre canais.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="servicos" id="servicos">
+  <div class="veil veil-tl"></div>
+  <div class="servicos-inner">
+    <div class="problema-head">
+      <div class="eyebrow-sm">Serviços</div>
+      <h2 class="problema-title">Um caminho pra cada<br>estágio do negócio.</h2>
+      <p class="processo-sub">Três formas de trabalhar comigo — da presença básica à operação digital completa. Valores definidos após o diagnóstico, sob medida pro seu caso.</p>
+    </div>
+
+    <div class="tiers">
+      <div class="tier-card">
+        <div class="tier-eyebrow">Ponto de partida</div>
+        <h3 class="tier-name">Presença</h3>
+        <p class="tier-desc">Pra quem ainda não tem site — ou tem um que não representa o trabalho.</p>
+        <ul class="tier-list">
+          <li>Site institucional profissional</li>
+          <li>Google Business Profile otimizado</li>
+          <li>Estrutura básica de SEO local</li>
+        </ul>
+        <a href="#" class="tier-cta ghost">Falar sobre esse plano</a>
+      </div>
+
+      <div class="tier-card featured">
+        <div class="tier-badge">Mais escolhido</div>
+        <div class="tier-eyebrow">Consultoria + Execução</div>
+        <h3 class="tier-name">Direção</h3>
+        <p class="tier-desc">Posicionamento estratégico definido antes do site — e um site construído pra converter.</p>
+        <ul class="tier-list">
+          <li>Diagnóstico e posicionamento estratégico</li>
+          <li>Site com SEO técnico e copy orientada a conversão</li>
+          <li>Google Business + estrutura de autoridade</li>
+        </ul>
+        <a href="#" class="tier-cta solid">Quero começar por aqui</a>
+      </div>
+
+      <div class="tier-card">
+        <div class="tier-eyebrow">Crescimento contínuo</div>
+        <h3 class="tier-name">Aceleração</h3>
+        <p class="tier-desc">Pra quem já validou e quer presença digital trabalhando todo mês.</p>
+        <ul class="tier-list">
+          <li>Tudo do plano Direção</li>
+          <li>Conteúdo estratégico pro Instagram</li>
+          <li>Otimização e acompanhamento mensal</li>
+        </ul>
+        <a href="#" class="tier-cta ghost">Falar sobre esse plano</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="autoridade" id="autoridade">
+  <div class="veil veil-br"></div>
+  <div class="autoridade-inner">
+    <div class="autoridade-text">
+      <div class="eyebrow-sm">Quem constrói isso</div>
+      <h2 class="problema-title">Estratégia e código,<br>na mesma <em>cabeça</em>.</h2>
+      <p class="autoridade-p">
+        Comecei a estudar retórica e construir sites ainda estudante — hoje aplico os dois num processo só:
+        entendo o argumento do seu negócio antes de desenhar uma linha. Isso significa menos intermediário,
+        menos retrabalho, e mais controle sobre o resultado final.
+      </p>
+      <p class="autoridade-p">
+        Trabalho direto com clínicas, estúdios e escritórios que precisam de clareza — não de mais uma reunião
+        de agência explicando por que o projeto atrasou.
+      </p>
+    </div>
+    <div class="autoridade-badges">
+      <div class="badge-item">
+        <span class="badge-num">01</span>
+        <p>Processo próprio: diagnóstico → posicionamento → presença → execução</p>
+      </div>
+      <div class="badge-item">
+        <span class="badge-num">02</span>
+        <p>Atendimento direto — sem intermediário entre você e quem constrói</p>
+      </div>
+      <div class="badge-item">
+        <span class="badge-num">03</span>
+        <p>Google Business, SEO técnico e Instagram estratégico sob o mesmo teto</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contato" id="contato">
+  <div class="veil veil-top"></div>
+  <div class="contato-inner">
+    <div class="eyebrow-sm" style="justify-content:center;">Próximo passo</div>
+    <h2 class="contato-title">Vamos conversar sobre<br>o seu diagnóstico.</h2>
+    <p class="contato-sub">Sem compromisso. Uma conversa de 15 minutos já mostra se faz sentido pra você.</p>
+    <div class="contato-cta-row">
+      <a href="#" class="btn-primary">Falar no WhatsApp →</a>
+      <a href="#" class="btn-ghost">Enviar e-mail</a>
+    </div>
+  </div>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="logo">Rafael Antonio<span class="logo-web">Web</span></span>
+      <div class="footer-links">
+        <a href="#servicos" style="color:inherit;text-decoration:none;">Serviços</a>
+        <a href="#autoridade" style="color:inherit;text-decoration:none;">Autoridade</a>
+        <a href="#contato" style="color:inherit;text-decoration:none;">Contato</a>
+        <div class="lang-toggle">PT / EN</div>
+      </div>
+      <span class="footer-copy">© 2026 Rafael Antonio</span>
+    </div>
+  </footer>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+  // ---------- cursor ----------
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx=0,my=0,rx=0,ry=0;
+  window.addEventListener('mousemove', e=>{
+    mx=e.clientX; my=e.clientY;
+    cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  });
+  (function loop(){ rx+=(mx-rx)*0.15; ry+=(my-ry)*0.15; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(loop); })();
+
+  // ---------- three.js scene ----------
+  const canvas = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 9);
+
+  // lights
+  scene.add(new THREE.AmbientLight(0x1d4e96, 1.1));
+  const key = new THREE.PointLight(0x2e7be0, 6, 30);
+  key.position.set(4, 3, 6);
+  scene.add(key);
+  const rim = new THREE.PointLight(0x1d4e96, 4, 30);
+  rim.position.set(-5, -2, -4);
+  scene.add(rim);
+
+  // organic displaced icosahedron ("fragments merging into clarity")
+  const geo = new THREE.IcosahedronGeometry(2.2, 6);
+  const posAttr = geo.attributes.position;
+  const basePositions = posAttr.array.slice();
+  const targetOffsets = new Float32Array(posAttr.count);
+  for(let i=0;i<posAttr.count;i++){ targetOffsets[i] = (Math.random()-0.5)*0.35; }
+
+  const material = new THREE.MeshPhysicalMaterial({
+    color: 0x13294b,
+    metalness: 0.4,
+    roughness: 0.25,
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.3,
+    emissive: 0x13294b,
+    emissiveIntensity: 0.4,
+    flatShading: true
+  });
+  const mesh = new THREE.Mesh(geo, material);
+  scene.add(mesh);
+
+  const wireGeo = new THREE.IcosahedronGeometry(2.35, 1);
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x2e7be0, wireframe:true, transparent:true, opacity:0.25 });
+  const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+  scene.add(wireMesh);
+
+  function positionScene(){
+    const isMobile = window.innerWidth < 720;
+    mesh.position.set(isMobile ? 0 : 3.6, isMobile ? -1.5 : 0.2, 0);
+    wireMesh.position.copy(mesh.position);
+  }
+  positionScene();
+
+  // scatter fragments initially
+  const scatterSeeds = [];
+  for(let i=0;i<posAttr.count;i++){
+    scatterSeeds.push(new THREE.Vector3((Math.random()-0.5)*6, (Math.random()-0.5)*6, (Math.random()-0.5)*6));
+  }
+
+  let assembleProgress = 0; // 0 = scattered, 1 = fully formed
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion) assembleProgress = 1;
+
+  function updateGeometry(){
+    const arr = posAttr.array;
+    for(let i=0;i<posAttr.count;i++){
+      const ix=i*3;
+      const bx=basePositions[ix], by=basePositions[ix+1], bz=basePositions[ix+2];
+      const len = Math.sqrt(bx*bx+by*by+bz*bz) || 1;
+      const nx = bx/len, ny=by/len, nz=bz/len;
+      const noise = targetOffsets[i] * Math.sin(performance.now()*0.0003 + i);
+      const targetX = bx + nx*noise;
+      const targetY = by + ny*noise;
+      const targetZ = bz + nz*noise;
+      const s = scatterSeeds[i];
+      arr[ix]   = THREE.MathUtils.lerp(s.x, targetX, assembleProgress);
+      arr[ix+1] = THREE.MathUtils.lerp(s.y, targetY, assembleProgress);
+      arr[ix+2] = THREE.MathUtils.lerp(s.z, targetZ, assembleProgress);
+    }
+    posAttr.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
+
+  let targetRotX = 0, targetRotY = 0;
+  window.addEventListener('mousemove', e=>{
+    targetRotY = (e.clientX / window.innerWidth - 0.5) * 0.6;
+    targetRotX = (e.clientY / window.innerHeight - 0.5) * 0.4;
+  });
+
+  function animate(){
+    requestAnimationFrame(animate);
+    updateGeometry();
+    mesh.rotation.y += 0.0025;
+    mesh.rotation.x += 0.0008;
+    wireMesh.rotation.copy(mesh.rotation);
+    mesh.rotation.y += (targetRotY - 0) * 0.02;
+    mesh.rotation.x += (targetRotX - 0) * 0.02;
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    positionScene();
+  });
+
+  // ---------- entrance timeline ----------
+  const tl = gsap.timeline({ delay: 0.2 });
+  if(!reduceMotion){
+    tl.to({}, { duration: 1.8, onUpdate: function(){ assembleProgress = this.progress(); }, ease:'power2.out' })
+      .to('.headline .row span', { y:'0%', duration:0.9, stagger:0.12, ease:'power4.out' }, 0.5)
+      .to('#eyebrow', { opacity:1, duration:0.6 }, 0.3)
+      .to('#pillarsText', { opacity:1, y:0, duration:0.6, ease:'power3.out' }, 1.5)
+      .to('#ctaRow', { opacity:1, y:0, duration:0.6, ease:'power3.out' }, 1.7);
+  } else {
+    document.querySelectorAll('.headline .row span').forEach(el=> el.style.transform='translateY(0)');
+    ['#eyebrow','#pillarsText','#ctaRow'].forEach(sel=>{
+      const el=document.querySelector(sel); el.style.opacity=1; el.style.transform='none';
+    });
+  }  // ---------- Processo: scroll-driven line + step reveal ----------
+  if(window.gsap && window.ScrollTrigger && !reduceMotion){
+    gsap.registerPlugin(ScrollTrigger);
+
+    const nodes = Array.from(document.querySelectorAll('.step-node'));
+
+    gsap.to('#stepsFill', {
+      height: '100%',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.steps',
+        start: 'top 75%',
+        end: 'bottom 60%',
+        scrub: 0.6,
+        onUpdate: (self)=>{
+          const pct = self.progress * 100;
+          nodes.forEach(n=>{
+            const nodePct = parseFloat(n.dataset.pct);
+            n.classList.toggle('lit', pct >= nodePct - 2);
+          });
+        }
+      }
+    });
+
+    document.querySelectorAll('.step').forEach((el)=>{
+      gsap.to(el, {
+        opacity: 1,
+        x: 0,
+        duration: 0.7,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      });
+    });
+  } else {
+    document.getElementById('stepsFill').style.height = '100%';
+    document.querySelectorAll('.step').forEach(el=>{ el.style.opacity=1; el.style.transform='none'; });
+    document.querySelectorAll('.step-node').forEach(n=> n.classList.add('lit'));
+  }
+
+  // ---------- Problema & Solução: fade-in reveal ----------
+  if(window.gsap && window.ScrollTrigger && !reduceMotion){
+    gsap.from('.problema-head', {
+      opacity:0, y:20, duration:0.8, ease:'power3.out',
+      scrollTrigger:{ trigger:'.problema-head', start:'top 85%' }
+    });
+    gsap.from('.orbit-wrap', {
+      opacity:0, scale:0.92, duration:0.9, ease:'power3.out',
+      scrollTrigger:{ trigger:'.orbit-wrap', start:'top 85%' }
+    });
+    gsap.from('.solucao-card', {
+      opacity:0, y:24, duration:0.7, stagger:0.15, ease:'power3.out',
+      scrollTrigger:{ trigger:'.solucao-grid', start:'top 85%' }
+    });
+
+    gsap.from('.tier-card', {
+      opacity:0, y:28, duration:0.7, stagger:0.15, ease:'power3.out',
+      scrollTrigger:{ trigger:'.tiers', start:'top 85%' }
+    });
+
+    gsap.from('.autoridade-text', {
+      opacity:0, y:20, duration:0.8, ease:'power3.out',
+      scrollTrigger:{ trigger:'.autoridade-inner', start:'top 85%' }
+    });
+    gsap.from('.badge-item', {
+      opacity:0, x:16, duration:0.6, stagger:0.12, ease:'power3.out',
+      scrollTrigger:{ trigger:'.autoridade-badges', start:'top 85%' }
+    });
+
+    gsap.from('.contato-inner', {
+      opacity:0, y:20, duration:0.8, ease:'power3.out',
+      scrollTrigger:{ trigger:'.contato-inner', start:'top 85%' }
+    });
+  }
+</script>
+</body>
+</html>
